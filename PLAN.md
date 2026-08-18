@@ -46,24 +46,47 @@ manifest, and `@vite()` resolving correctly through the rewrite.
 
 ## 2. The two `.htaccess` files
 
+> **Built and verified 18 Aug 2026.** The naive `RewriteRule ^(.*)$ public/$1` version — copied from
+> Precious and Forever — does **not** work at port 80. Those two are served by vhosts with
+> `DocumentRoot` already set to `public/`, so their root `.htaccess` never actually runs. What is
+> below is what was tested and works. See "Two things that bit" at the end of this section.
+
 ### `d:\xampp\htdocs\ingo\.htaccess`
 
 ```apache
-# Forward everything into public/ so the app can live in a subfolder
-RewriteEngine On
+# Subfolder deployment for http://localhost/ingo
+# Scoped to this directory — requests to sibling htdocs projects never see these rules.
 
-# Block direct access to dotfiles (.env, .git) if ever requested
-RedirectMatch 404 /\.(?!well-known)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
 
-# Strip trailing slashes on non-folders
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_URI} (.+)/$
-RewriteRule ^ %1 [L,R=301]
+    # Never serve dotfiles (.env, .git) if one is requested directly
+    RedirectMatch 404 /\.(?!well-known)
 
-# Send anything not already under public/ into public/
-RewriteCond %{REQUEST_URI} !^/ingo/public
-RewriteRule ^(.*)$ public/$1 [L]
+    # Real files that live under public/ — built assets, favicon, robots.txt.
+    # The !-f guard matters: without it the rewrite below restarts the ruleset,
+    # this rule then matches the root index.php shim and maps it into public/,
+    # and Laravel loses its /ingo base path again.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{DOCUMENT_ROOT}/ingo/public/$1 -f
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Everything else goes through the root shim, which loads public/index.php
+    RewriteCond %{REQUEST_URI} !^/ingo/public/
+    RewriteRule ^(.*)$ index.php [L]
+</IfModule>
 ```
+
+### `d:\xampp\htdocs\ingo\index.php` — the shim this depends on
+
+```php
+<?php
+
+require __DIR__.'/public/index.php';
+```
+
+One line, and the same trick Kugawana already uses. It exists so `SCRIPT_NAME` stays
+`/ingo/index.php`, which is what lets Symfony work out that the app is based at `/ingo`.
 
 ### `d:\xampp\htdocs\ingo\public\.htaccess`
 
@@ -109,7 +132,28 @@ Every project on `localhost` shares one cookie namespace, and both Forever and K
 stay distinct because their `APP_NAME` slugs happen to differ.
 
 Setting `SESSION_COOKIE=ingo_session` and `SESSION_PATH=/ingo` in InGo's `.env` makes the problem
-unreachable in either direction.
+unreachable in either direction. Verified in the response headers:
+
+```
+Set-Cookie: ingo_session=…; path=/ingo; httponly; samesite=lax
+Set-Cookie: XSRF-TOKEN=…;  path=/ingo; samesite=lax
+```
+
+### Two things that bit, recorded so they don't bite twice
+
+**A bare `/ingo/` 404s under the `public/$1` rewrite.** The request is a directory hit, and mod_dir
+resolves it before the rewrite can help. Adding `DirectoryIndex public/index.php` turns the 404 into
+a 403 rather than fixing it. The shim removes the problem: there is now a real `index.php` at the
+root for mod_dir to find.
+
+**Rewriting straight into `public/index.php` makes every route 404 — from Laravel, not Apache.** With
+`SCRIPT_NAME=/ingo/public/index.php` and `REQUEST_URI=/ingo/login`, Symfony cannot derive a base path,
+so Laravel tries to route the literal `/ingo/login` and finds nothing. The giveaway is that
+`/ingo/public/login` returns 200 while `/ingo/login` returns Laravel's own 404 page. Routing through
+the root shim keeps `SCRIPT_NAME=/ingo/index.php` and the base path resolves.
+
+No `ASSET_URL` is needed — `@vite` correctly emits `http://localhost/ingo/build/assets/…` once the
+base path is right.
 
 ---
 
@@ -274,15 +318,15 @@ being lost. Three ways back, in order of preference:
 
 ## 7. Build order
 
-| Phase | Work | Effort |
-|---|---|---|
-| **PH 00** | Scaffold and prove the URL | Half a day |
-| **PH 01** | Schema, models, status logic, tests | 1 day |
-| **PH 02** | Firestore import command | Half a day |
-| **PH 03** | The four screens in Blade + Tailwind | 2–3 days |
-| **PH 04** | Auth and roles | Half a day |
-| **PH 05** | Utilisation, projections, CSV, polling | 1 day |
-| **PH 06** | Cutover | Half a day |
+| Phase | Work | Effort | Status |
+|---|---|---|---|
+| **PH 00** | Scaffold and prove the URL | Half a day | ✅ Done |
+| **PH 01** | Schema, models, status logic, tests | 1 day | 🟡 Migrations + models done; factories, seeder and tests outstanding |
+| **PH 02** | Firestore import command | Half a day | ⬜ Blocked on the Firestore export |
+| **PH 03** | The four screens in Blade + Tailwind | 2–3 days | ⬜ |
+| **PH 04** | Auth and roles | Half a day | ⬜ Breeze installed; registration still open, roles not enforced |
+| **PH 05** | Utilisation, projections, CSV, polling | 1 day | ⬜ |
+| **PH 06** | Cutover | Half a day | ⬜ |
 
 ### PH 00 — Scaffold and prove the URL
 
