@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Settings;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -46,7 +47,7 @@ class Rider extends Model
 
         return match (true) {
             $days < 0 => ['level' => 'bad', 'label' => 'Expired', 'days' => $days],
-            $days <= 30 => ['level' => 'warn', 'label' => "Expires in {$days}d", 'days' => $days],
+            $days <= Settings::int('licence_warn_days') => ['level' => 'warn', 'label' => "Expires in {$days}d", 'days' => $days],
             default => ['level' => 'ok', 'label' => 'Valid', 'days' => $days],
         };
     }

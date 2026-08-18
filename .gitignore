@@ -22,3 +22,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Agent tooling that lives in the project folder but is not part of the app
+/.agents

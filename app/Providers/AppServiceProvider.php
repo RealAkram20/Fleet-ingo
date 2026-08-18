@@ -27,5 +27,12 @@ class AppServiceProvider extends ServiceProvider
          * serviced, which is the whole of the day-to-day yard job.
          */
         Gate::define('manage-fleet', fn (User $user) => $user->isAdmin());
+
+        /*
+         * Accounts and application configuration. The same test as manage-fleet
+         * today, but kept separate because they are different powers and one may
+         * well outlive the other.
+         */
+        Gate::define('administer', fn (User $user) => $user->isAdmin());
     }
 }

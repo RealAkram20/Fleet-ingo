@@ -1,29 +1,22 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
+@section('title', 'My Account')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
-            </div>
+@section('content')
 
-            <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
-            </div>
+<h2 class="m-0 font-display text-xl uppercase tracking-wide">My Account</h2>
+<p class="mb-5 mt-1 text-[13px] text-plate-300">Your own name, sign-in address and password.</p>
 
-            <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
-            </div>
-        </div>
-    </div>
-</x-app-layout>
+<x-panel title="Details" subtitle="Changing your email address means signing in with the new one.">
+    @include('profile.partials.update-profile-information-form')
+</x-panel>
+
+<x-panel title="Password" subtitle="Use at least 8 characters.">
+    @include('profile.partials.update-password-form')
+</x-panel>
+
+<x-panel title="Close my account"
+         subtitle="Everything you logged is kept; only your access is removed.">
+    @include('profile.partials.delete-user-form')
+</x-panel>
+
+@endsection

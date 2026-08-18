@@ -27,10 +27,10 @@
             </x-select-field>
 
             <x-field label="Service interval (km)" name="service_interval_km" type="number" required
-                     :value="$editing?->service_interval_km ?? 3000" />
+                     :value="$editing?->service_interval_km ?? \App\Support\Settings::int('default_service_interval_km')" />
 
             <x-field label="Service interval (months)" name="service_interval_months" type="number"
-                     :value="$editing?->service_interval_months ?? 6"
+                     :value="$editing ? $editing->service_interval_months : \App\Support\Settings::get('default_service_interval_months')"
                      hint="Whichever falls due first wins. Blank tracks distance only." />
         </div>
 

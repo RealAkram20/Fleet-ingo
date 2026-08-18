@@ -325,6 +325,7 @@ being lost. Three ways back, in order of preference:
 | **PH 04** | Auth and roles | Half a day | ✅ Done — 12 role tests |
 | **PH 05** | Utilisation, projections, CSV, polling | 1 day | ⬜ |
 | **PH 06** | Cutover | Half a day | ⬜ |
+| **PH 07** | User management and app settings | 1 day | ✅ Done — 27 tests |
 
 ### PH 00 — Scaffold and prove the URL
 

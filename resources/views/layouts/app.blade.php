@@ -7,7 +7,7 @@
 
     <title>@yield('title', 'Fleet Log') — {{ config('app.name') }}</title>
 
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32.png') }}?v={{ $brandVersion ?? '1' }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
 
@@ -20,15 +20,14 @@
         <div class="flex flex-wrap items-baseline justify-between gap-4">
             <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <a href="{{ route('dashboard') }}" class="shrink-0">
-                    <img src="{{ asset('images/ingo-logo.png') }}"
-                         alt="InGo"
-                         width="640" height="213"
+                    <img src="{{ asset($branding['logo']) }}"
+                         alt="{{ $branding['name'] }}"
                          class="h-11 w-auto">
                 </a>
                 <h1 class="m-0 font-display text-[30px] font-bold uppercase tracking-wide">Fleet Log</h1>
-                <p class="m-0 font-mono text-[12px] tracking-wide text-plate-300">
-                    RIDER · MILEAGE · SERVICE TRACKING — HARARE OPS
-                </p>
+                @if ($branding['tagline'])
+                    <p class="m-0 font-mono text-[12px] tracking-wide text-plate-300">{{ $branding['tagline'] }}</p>
+                @endif
             </div>
 
             <form method="POST" action="{{ route('logout') }}" class="shrink-0">
@@ -47,13 +46,16 @@
         <nav class="mt-5 flex w-fit gap-px overflow-hidden rounded-sm border border-asphalt-600 bg-asphalt-900">
             @php
                 $tabs = [
-                    ['dashboard', 'Dashboard'],
-                    ['readings.index', 'Log Reading'],
-                    ['riders.index', 'Riders'],
-                    ['bikes.index', 'Bikes'],
+                    ['dashboard', 'Dashboard', null],
+                    ['readings.index', 'Log Reading', null],
+                    ['riders.index', 'Riders', null],
+                    ['bikes.index', 'Bikes', null],
+                    ['users.index', 'Users', 'administer'],
+                    ['settings.edit', 'Settings', 'administer'],
                 ];
             @endphp
-            @foreach ($tabs as [$route, $label])
+            @foreach ($tabs as [$route, $label, $ability])
+                @continue($ability && ! auth()->user()->can($ability))
                 @php $active = request()->routeIs(str_replace('.index', '.*', $route)) || request()->routeIs($route); @endphp
                 <a href="{{ route($route) }}"
                    @class([
@@ -72,7 +74,7 @@
 </main>
 
 <footer class="mx-auto max-w-6xl px-5 pb-10 font-mono text-[11px] tracking-wide text-plate-300/60">
-    InGo Fleet Log — {{ config('app.name') }} · {{ now()->format('D d M Y, H:i') }} Harare
+    {{ $branding['name'] }} · {{ now()->format('D d M Y, H:i') }} {{ config('app.timezone') }}
 </footer>
 
 </body>

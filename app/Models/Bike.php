@@ -8,17 +8,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Support\Settings;
 use Illuminate\Support\Carbon;
 
 class Bike extends Model
 {
     use HasFactory, SoftDeletes;
 
-    /** Kilometres left before a bike is flagged Due Soon. */
-    public const DUE_SOON_KM = 300;
+    /** Kilometres left before a bike is flagged Due Soon. Admin-configurable. */
+    public static function dueSoonKm(): int
+    {
+        return Settings::int('due_soon_km');
+    }
 
-    /** Days left before a time-based service is flagged Due Soon. */
-    public const DUE_SOON_DAYS = 30;
+    /** Days left before a time-based service is flagged Due Soon. Admin-configurable. */
+    public static function dueSoonDays(): int
+    {
+        return Settings::int('due_soon_days');
+    }
 
     protected $fillable = [
         'reg',
@@ -116,14 +123,14 @@ class Bike extends Model
 
         $byDistance = match (true) {
             $km <= 0 => ['level' => 'bad', 'label' => 'Overdue'],
-            $km <= self::DUE_SOON_KM => ['level' => 'warn', 'label' => 'Due Soon'],
+            $km <= self::dueSoonKm() => ['level' => 'warn', 'label' => 'Due Soon'],
             default => ['level' => 'ok', 'label' => 'OK'],
         };
 
         $byTime = match (true) {
             $days === null => ['level' => 'ok', 'label' => 'OK'],
             $days <= 0 => ['level' => 'bad', 'label' => 'Overdue'],
-            $days <= self::DUE_SOON_DAYS => ['level' => 'warn', 'label' => 'Due Soon'],
+            $days <= self::dueSoonDays() => ['level' => 'warn', 'label' => 'Due Soon'],
             default => ['level' => 'ok', 'label' => 'OK'],
         };
 

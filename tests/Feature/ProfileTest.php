@@ -19,6 +19,24 @@ class ProfileTest extends TestCase
             ->get('/profile');
 
         $response->assertOk();
+
+        /*
+         * Asserting the content, not just the status. This page once returned a
+         * perfectly healthy 200 while rendering nothing but the layout shell,
+         * because the view used a slot layout and layouts.app expects sections.
+         */
+        $response->assertSee('My Account');
+        $response->assertSee('Change Password');
+        $response->assertSee('Close My Account');
+        $response->assertSee($user->email);
+    }
+
+    public function test_every_password_box_on_the_profile_page_can_be_revealed(): void
+    {
+        $response = $this->actingAs(User::factory()->create())->get('/profile');
+
+        // current password, new password, confirmation, and the deletion confirm
+        $this->assertSame(4, substr_count($response->getContent(), 'show = !show'));
     }
 
     public function test_profile_information_can_be_updated(): void

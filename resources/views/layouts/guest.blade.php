@@ -7,7 +7,7 @@
 
     <title>Sign in — {{ config('app.name') }}</title>
 
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32.png') }}?v={{ $brandVersion ?? '1' }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
 
@@ -17,13 +17,12 @@
 
 <div class="flex min-h-screen flex-col items-center justify-center px-5 py-10">
 
-    <img src="{{ asset('images/ingo-logo.png') }}"
-         alt="InGo"
-         width="640" height="213"
+    <img src="{{ asset($branding['logo']) }}"
+         alt="{{ $branding['name'] }}"
          class="h-16 w-auto">
 
     <p class="mb-8 mt-4 text-center font-mono text-[11px] uppercase tracking-widest text-plate-300">
-        Fleet Log · Harare Ops
+        {{ $branding['name'] }}
     </p>
 
     <div class="w-full max-w-md overflow-hidden rounded-sm border border-asphalt-600 bg-asphalt-800">
