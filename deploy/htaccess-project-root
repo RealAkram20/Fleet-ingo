@@ -1,0 +1,33 @@
+# ---------------------------------------------------------------------------
+# Use this ONLY if the subdomain's document root cannot be pointed at public/.
+#
+# Copy it to the project root as ".htaccess" (replacing the localhost one).
+# It hides the application internals from the web and sends every request
+# through the front controller, so the site works with the document root at
+# the project folder itself.
+#
+# The better setup is document root = <project>/public, in which case this
+# file is not needed at all — see README.md in this folder.
+# ---------------------------------------------------------------------------
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Never serve dotfiles (.env, .git, .htaccess) if one is requested directly.
+    RedirectMatch 404 /\.(?!well-known)
+
+    # The application's own folders are not web content.
+    RewriteRule ^(app|bootstrap|config|database|deploy|resources|routes|storage|tests|vendor|node_modules)(/|$) - [R=404,L]
+    RewriteRule ^(artisan|composer\.(json|lock)|package(-lock)?\.json|vite\.config\.js|phpunit\.xml)$ - [R=404,L]
+
+    # Real files that live under public/ — built assets, favicons, uploads.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Everything else goes through the root shim, which loads public/index.php.
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ index.php [L]
+</IfModule>
