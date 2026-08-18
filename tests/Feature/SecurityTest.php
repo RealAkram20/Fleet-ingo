@@ -237,6 +237,32 @@ class SecurityTest extends TestCase
             ->assertDontSee('Farai Chikwanha');
     }
 
+    public function test_a_literal_underscore_in_a_search_finds_exactly_that(): void
+    {
+        // The flip side of neutralised wildcards: escaping only works when
+        // like() and clause() are used TOGETHER — like() alone prefixes "!"
+        // characters that a plain LIKE treats as literals, which both leaves
+        // "_" a wildcard and breaks searching for one. This pins the pairing.
+        Rider::factory()->create(['name' => 'A_B Delivery']);
+        Rider::factory()->create(['name' => 'AXB Delivery']);
+
+        $this->actingAs($this->user())
+            ->get('/riders?'.http_build_query(['q' => 'A_B']))
+            ->assertOk()
+            ->assertSee('A_B Delivery')
+            ->assertDontSee('AXB Delivery');
+    }
+
+    public function test_the_escape_character_itself_is_searchable(): void
+    {
+        Rider::factory()->create(['name' => 'Moyo! Express']);
+
+        $this->actingAs($this->user())
+            ->get('/riders?'.http_build_query(['q' => 'Moyo!']))
+            ->assertOk()
+            ->assertSee('Moyo! Express');
+    }
+
     public function test_a_quote_in_a_search_term_is_harmless(): void
     {
         Rider::factory()->create(['name' => 'Tendai Moyo']);
