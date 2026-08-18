@@ -13,13 +13,13 @@
     <form method="POST" action="{{ route('settings.branding') }}" enctype="multipart/form-data">
         @csrf @method('PATCH')
 
-        <div class="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] gap-4">
             <x-field label="Application name" name="app_name" required :value="$settings['app_name']" />
             <x-field label="Tagline" name="tagline" :value="$settings['tagline']"
                      hint="Shown beside the logo in the header." />
         </div>
 
-        <div class="mt-5 grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-5">
+        <div class="mt-5 grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-5">
             <div>
                 <p class="mb-2 font-mono text-[10px] uppercase tracking-widest text-plate-300">Current logo</p>
                 <div class="mb-3 rounded-sm border border-asphalt-600 bg-asphalt-900 p-4">
@@ -51,7 +51,7 @@
     <form method="POST" action="{{ route('settings.fleet') }}">
         @csrf @method('PATCH')
 
-        <div class="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-4">
             <x-field label="Default service interval (km)" name="default_service_interval_km" type="number" required
                      :value="$settings['default_service_interval_km']"
                      hint="Pre-filled when adding a bike." />
@@ -99,7 +99,7 @@
     <form method="POST" action="{{ route('settings.mail') }}">
         @csrf @method('PATCH')
 
-        <div class="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-4">
             <x-field label="SMTP host" name="mail_host" :value="$settings['mail_host']"
                      placeholder="e.g. smtp.gmail.com" hint="Leave blank to keep mail in the log." />
             <x-field label="Port" name="mail_port" type="number" :value="$settings['mail_port']" placeholder="587" />

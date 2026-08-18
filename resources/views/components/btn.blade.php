@@ -1,7 +1,7 @@
 @props(['variant' => 'primary', 'as' => 'button', 'href' => null])
 
 @php
-    $base = 'inline-block cursor-pointer rounded-sm border font-display text-[13px] uppercase tracking-wide transition disabled:opacity-50';
+    $base = 'inline-block cursor-pointer touch-manipulation rounded-sm border font-display text-[13px] uppercase tracking-wide transition disabled:opacity-50';
     $size = 'px-4 py-2';
     $look = match ($variant) {
         'primary' => 'border-ingo-500 bg-ingo-500 font-bold text-asphalt-900 hover:brightness-110',

@@ -15,7 +15,7 @@
 </head>
 <body class="min-h-screen bg-asphalt-900 font-sans text-plate-50 antialiased">
 
-<div class="flex min-h-screen flex-col items-center justify-center px-5 py-10">
+<div class="flex min-h-screen flex-col items-center justify-center px-4 py-8 sm:px-5 sm:py-10">
 
     <img src="{{ asset($branding['logo']) }}"
          alt="{{ $branding['name'] }}"
@@ -27,7 +27,7 @@
 
     <div class="w-full max-w-md overflow-hidden rounded-sm border border-asphalt-600 bg-asphalt-800">
         <div class="h-1 bg-ingo-500"></div>
-        <div class="p-7">
+        <div class="p-5 sm:p-7">
             {{ $slot }}
         </div>
     </div>

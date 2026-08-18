@@ -14,7 +14,7 @@
 <p class="mb-5 mt-0 text-[13px] text-plate-300">Live status across every bike in the fleet.</p>
 
 {{-- Summary strip. Each tile that represents a problem links to the filtered view. --}}
-<div class="mb-6 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2.5">
+<div class="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
     @php
         $tiles = [
             ['value' => $summary['total'], 'label' => 'Bikes in fleet', 'tone' => 'plain', 'href' => route('dashboard')],
@@ -35,7 +35,12 @@
             };
         @endphp
         <a href="{{ $tile['href'] }}"
-           class="block rounded-sm border border-asphalt-600 border-l-[3px] {{ $tone }} bg-asphalt-800 px-4 py-3.5 transition hover:bg-asphalt-700">
+           @class([
+               'block rounded-sm border border-asphalt-600 border-l-[3px] bg-asphalt-800 px-4 py-3.5 transition hover:bg-asphalt-700',
+               $tone,
+               // The fleet total takes the whole first row on a phone; the four flags pair up beneath it.
+               'col-span-2 sm:col-span-1' => $loop->first,
+           ])>
             <div class="font-display text-[28px] font-semibold leading-none tabular-nums">{{ $tile['value'] }}</div>
             <div class="mt-1.5 font-mono text-[10px] uppercase tracking-widest text-plate-300">{{ $tile['label'] }}</div>
         </a>
@@ -53,7 +58,7 @@
         </p>
     </x-panel>
 @else
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-4">
         @foreach ($bikes as $bike)
             @php
                 $service = $bike->serviceStatus();
@@ -121,14 +126,15 @@
                     </dl>
 
                     <div class="mt-4 flex flex-wrap gap-2 border-t border-asphalt-600 pt-3.5">
-                        <x-btn variant="ghost" :href="route('readings.index', ['bike' => $bike->id])">Log Reading</x-btn>
+                        <x-btn variant="ghost" class="flex-1 text-center" :href="route('readings.index', ['bike' => $bike->id])">Log Reading</x-btn>
 
                         <form method="POST" action="{{ route('services.store', $bike) }}"
-                              onsubmit="return confirm('Log a service for {{ $bike->reg }} today at {{ number_format($bike->currentMileage()) }} km?')">
+                              class="flex-1"
+                              data-confirm='Log a service for {{ $bike->reg }} today at {{ number_format($bike->currentMileage()) }} km?'>
                             @csrf
                             <input type="hidden" name="serviced_on" value="{{ now()->toDateString() }}">
                             <input type="hidden" name="mileage" value="{{ $bike->currentMileage() }}">
-                            <x-btn variant="primary">Mark Serviced</x-btn>
+                            <x-btn variant="primary" class="w-full">Mark Serviced</x-btn>
                         </form>
                     </div>
                 </div>

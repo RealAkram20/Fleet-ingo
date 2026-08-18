@@ -22,10 +22,14 @@
             @csrf
             @if ($editing) @method('PATCH') @endif
 
-            <div class="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-4">
+                {{--
+                    Picking a bike reloads the page so the history below follows it.
+                    While correcting a reading the bike is fixed, so no navigation.
+                    Wired through a data attribute: the CSP forbids inline handlers.
+                --}}
                 <x-select-field label="Bike" name="bike_id" required
-                                onchange="if(!this.dataset.editing) window.location = '{{ route('readings.index') }}?bike=' + this.value"
-                                data-editing="{{ $editing ? '1' : '' }}">
+                                :data-navigate="$editing ? null : route('readings.index').'?bike='">
                     @foreach ($bikes as $bike)
                         <option value="{{ $bike->id }}"
                                 @selected(old('bike_id', $editing?->bike_id ?? $selected?->id) == $bike->id)>
@@ -66,7 +70,7 @@
                 </p>
             @else
                 <div class="overflow-x-auto">
-                    <table class="w-full border-collapse text-[14px]">
+                    <table class="table-cards w-full border-collapse text-[14px]">
                         <thead>
                             <tr class="bg-asphalt-900 text-left font-mono text-[10px] uppercase tracking-widest text-plate-300">
                                 <th class="px-5 py-2.5 font-semibold">Date</th>
@@ -80,17 +84,17 @@
                             @foreach ($history as $i => $reading)
                                 @php $previous = $history[$i + 1] ?? null; @endphp
                                 <tr class="border-t border-asphalt-600">
-                                    <td class="px-5 py-3 tabular-nums">{{ $reading->recorded_on->format('d M Y') }}</td>
-                                    <td class="px-5 py-3 font-mono tabular-nums">{{ number_format($reading->mileage) }} km</td>
-                                    <td class="px-5 py-3 tabular-nums text-plate-300">
+                                    <td data-label="Date" class="px-5 py-3 tabular-nums">{{ $reading->recorded_on->format('d M Y') }}</td>
+                                    <td data-label="Odometer" class="px-5 py-3 font-mono tabular-nums">{{ number_format($reading->mileage) }} km</td>
+                                    <td data-label="Since previous" class="px-5 py-3 tabular-nums text-plate-300">
                                         {{ $previous ? '+'.number_format($reading->mileage - $previous->mileage).' km' : '—' }}
                                     </td>
-                                    <td class="px-5 py-3 text-plate-300">{{ $reading->recorder?->name ?? '—' }}</td>
-                                    <td class="px-5 py-3">
+                                    <td data-label="Logged by" class="px-5 py-3 text-plate-300">{{ $reading->recorder?->name ?? '—' }}</td>
+                                    <td class="actions px-5 py-3">
                                         <div class="flex justify-end gap-2">
                                             <x-btn variant="small" :href="route('readings.index', ['bike' => $selected->id, 'edit' => $reading->id])">Edit</x-btn>
                                             <form method="POST" action="{{ route('readings.destroy', $reading) }}"
-                                                  onsubmit="return confirm('Delete the reading of {{ number_format($reading->mileage) }} km from {{ $reading->recorded_on->format('d M Y') }}?')">
+                                                  data-confirm='Delete the reading of {{ number_format($reading->mileage) }} km from {{ $reading->recorded_on->format('d M Y') }}?'>
                                                 @csrf @method('DELETE')
                                                 <x-btn variant="danger">Delete</x-btn>
                                             </form>

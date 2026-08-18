@@ -2,7 +2,7 @@
     @csrf
     @method('patch')
 
-    <div class="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-4">
         <x-field label="Name" name="name" required :value="auth()->user()->name" autocomplete="name" />
         <x-field label="Email" name="email" type="email" required :value="auth()->user()->email" autocomplete="username" />
     </div>

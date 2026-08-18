@@ -2,7 +2,7 @@
     @csrf
     @method('put')
 
-    <div class="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-4">
         <x-field label="Current password" name="current_password" type="password" required
                  autocomplete="current-password" />
         <x-field label="New password" name="password" type="password" required

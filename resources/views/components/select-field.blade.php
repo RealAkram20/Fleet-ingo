@@ -8,7 +8,7 @@
     <select id="{{ $name }}"
             name="{{ $name }}"
             {{ $attributes->class([
-                'w-full rounded-sm border bg-asphalt-900 px-3 py-2 text-[14px] text-plate-50 outline-none transition',
+                'w-full rounded-sm border bg-asphalt-900 px-3 py-2 text-base text-plate-50 outline-none transition sm:text-[14px]',
                 'focus:border-ingo-500 focus:ring-1 focus:ring-ingo-500',
                 'border-status-bad' => $errors->has($name),
                 'border-asphalt-600' => ! $errors->has($name),

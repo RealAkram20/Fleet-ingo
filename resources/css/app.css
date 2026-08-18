@@ -41,3 +41,78 @@
     --font-display: 'Oswald', 'Arial Narrow', sans-serif;
     --font-mono: 'Roboto Mono', ui-monospace, monospace;
 }
+
+/*
+ * Written outside the Tailwind layers on purpose: unlayered rules beat layered
+ * ones, so these override the per-cell utility classes without !important.
+ */
+
+/* A scroll strip with no visible scrollbar (the tab bar on phones). */
+.scroll-strip {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.scroll-strip::-webkit-scrollbar {
+    display: none;
+}
+
+/*
+ * Data tables collapse into stacked cards on phones. Every cell prints its own
+ * column heading from data-label, so a row still reads on its own; the actions
+ * cell (class "actions") drops the heading and lays its buttons out in a row.
+ *
+ * 47.9375rem = 767px, i.e. everything below Tailwind's md breakpoint.
+ */
+@media (max-width: 47.9375rem) {
+    .table-cards thead {
+        display: none;
+    }
+
+    .table-cards,
+    .table-cards tbody,
+    .table-cards tr,
+    .table-cards td {
+        display: block;
+        width: 100%;
+    }
+
+    .table-cards tr {
+        padding: 0.875rem 1rem;
+    }
+
+    .table-cards td {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.3rem 0;
+        text-align: right;
+    }
+
+    .table-cards td::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        text-align: left;
+        color: var(--color-plate-300);
+    }
+
+    .table-cards td:not([data-label])::before,
+    .table-cards td[data-label=""]::before {
+        content: none;
+    }
+
+    .table-cards td.actions {
+        display: block;
+        padding-top: 0.75rem;
+        text-align: left;
+    }
+
+    .table-cards td.actions > div {
+        justify-content: flex-start;
+    }
+}

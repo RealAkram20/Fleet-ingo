@@ -25,7 +25,7 @@
                @if ($type !== 'file') value="{{ old($name, $value) }}" @endif
                @if ($placeholder) placeholder="{{ $placeholder }}" @endif
                {{ $attributes->class([
-                   'w-full rounded-sm border bg-asphalt-900 px-3 py-2 text-[14px] text-plate-50 outline-none transition',
+                   'w-full rounded-sm border bg-asphalt-900 px-3 py-2 text-base text-plate-50 outline-none transition sm:text-[14px]',
                    'placeholder:text-plate-300/40 focus:border-ingo-500 focus:ring-1 focus:ring-ingo-500',
                    'file:mr-3 file:cursor-pointer file:rounded-sm file:border-0 file:bg-asphalt-700 file:px-3 file:py-1.5 file:font-mono file:text-[11px] file:uppercase file:tracking-widest file:text-plate-300' => $type === 'file',
                    'border-status-bad' => $errors->has($name),

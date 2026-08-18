@@ -223,6 +223,45 @@ class SecurityTest extends TestCase
         $this->assertNotSame($before, session()->getId(), 'The session id must change on sign-in, or it can be fixated.');
     }
 
+    // ------------------------------------------------- CSP-safe behaviour
+
+    /**
+     * The CSP forbids inline handlers, and a form with a dead onsubmit does not
+     * fail loudly — it just submits with no confirmation. Behaviour therefore
+     * hangs off data attributes that app.js picks up, and no view may render an
+     * inline handler at all.
+     */
+    public function test_no_screen_renders_an_inline_event_handler(): void
+    {
+        $admin = $this->user();
+        \App\Models\Rider::factory()->create();
+        \App\Models\Bike::factory()->create();
+
+        foreach (['/dashboard', '/readings', '/riders', '/bikes', '/users', '/settings', '/profile'] as $path) {
+            $html = $this->actingAs($admin)->get($path)->assertOk()->getContent();
+
+            $this->assertDoesNotMatchRegularExpression(
+                '/\son(submit|click|change|load)\s*=/i',
+                $html,
+                "{$path} renders an inline event handler, which the CSP silently disables.",
+            );
+        }
+    }
+
+    public function test_destructive_forms_carry_a_confirmation_and_the_bike_picker_navigates(): void
+    {
+        $admin = $this->user();
+        $bike = \App\Models\Bike::factory()->create();
+
+        $this->actingAs($admin)->get('/bikes')->assertOk()->assertSee('data-confirm=', escape: false);
+        $this->actingAs($admin)->get('/dashboard')->assertOk()->assertSee('data-confirm=', escape: false);
+        $this->actingAs($admin)->get('/readings')->assertOk()->assertSee('data-navigate="', escape: false);
+
+        // While correcting a reading the bike is fixed, so the picker must not navigate.
+        $reading = \App\Models\Reading::factory()->for($bike)->create(['recorded_on' => now()->toDateString()]);
+        $this->actingAs($admin)->get('/readings?edit='.$reading->id)->assertOk()->assertDontSee('data-navigate', escape: false);
+    }
+
     // -------------------------------------------------------- injection
 
     public function test_a_wildcard_search_does_not_return_the_whole_table(): void

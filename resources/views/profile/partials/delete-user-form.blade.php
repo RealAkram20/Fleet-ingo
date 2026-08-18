@@ -4,7 +4,7 @@
 </p>
 
 <form method="POST" action="{{ route('profile.destroy') }}"
-      onsubmit="return confirm('Close your account? You will be signed out immediately and cannot sign back in.')">
+      data-confirm='Close your account? You will be signed out immediately and cannot sign back in.'>
     @csrf
     @method('delete')
 
