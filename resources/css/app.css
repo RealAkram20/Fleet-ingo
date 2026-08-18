@@ -41,8 +41,3 @@
     --font-display: 'Oswald', 'Arial Narrow', sans-serif;
     --font-mono: 'Roboto Mono', ui-monospace, monospace;
 }
-
-/* Alpine swaps this off once it boots; without it the hidden state flashes. */
-[x-cloak] {
-    display: none !important;
-}

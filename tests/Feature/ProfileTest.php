@@ -36,7 +36,7 @@ class ProfileTest extends TestCase
         $response = $this->actingAs(User::factory()->create())->get('/profile');
 
         // current password, new password, confirmation, and the deletion confirm
-        $this->assertSame(4, substr_count($response->getContent(), 'show = !show'));
+        $this->assertSame(4, substr_count($response->getContent(), 'data-password-toggle'));
     }
 
     public function test_profile_information_can_be_updated(): void

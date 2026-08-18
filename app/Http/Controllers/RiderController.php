@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\RiderRequest;
 use App\Models\Rider;
+use App\Support\Search;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,9 +18,9 @@ class RiderController extends Controller
         $riders = Rider::query()
             ->withCount('bikes')
             ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('license_number', 'like', "%{$search}%");
+                $q->whereRaw(Search::clause('name'), [Search::like($search)])
+                    ->orWhereRaw(Search::clause('phone'), [Search::like($search)])
+                    ->orWhereRaw(Search::clause('license_number'), [Search::like($search)]);
             }))
             ->orderBy('name')
             ->get();
@@ -27,7 +28,8 @@ class RiderController extends Controller
         return view('riders.index', [
             'riders' => $riders,
             'search' => $search,
-            'editing' => $request->query('edit') ? Rider::find($request->query('edit')) : null,
+            // is_scalar: ?edit[]=1 would hand find() an array and 500 the page.
+            'editing' => is_scalar($id = $request->query('edit')) ? Rider::find($id) : null,
         ]);
     }
 

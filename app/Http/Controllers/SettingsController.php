@@ -44,12 +44,15 @@ class SettingsController extends Controller
         ]);
 
         if ($request->hasFile('logo')) {
-            Setting::put('logo_path', $this->storeBranding($request->file('logo'), 'logo'));
+            $old = Settings::get('logo_path');
+            Setting::put('logo_path', $path = $this->storeBranding($request->file('logo'), 'logo'));
+            $this->removeReplacedBranding($old, $path);
         }
 
         if ($request->hasFile('icon')) {
-            $path = $this->storeBranding($request->file('icon'), 'icon');
-            Setting::put('icon_path', $path);
+            $old = Settings::get('icon_path');
+            Setting::put('icon_path', $path = $this->storeBranding($request->file('icon'), 'icon'));
+            $this->removeReplacedBranding($old, $path);
             $this->regenerateFavicons(public_path($path));
         }
 
@@ -124,12 +127,27 @@ class SettingsController extends Controller
             mkdir($dir, 0755, true);
         }
 
+        // The extension is guessed from the file's content, never taken from the
+        // uploaded filename: a "logo.php" with image bytes inside must not land
+        // in the web root as an executable script.
         // A changing filename is what busts the browser cache for a new logo.
-        $filename = $name.'-'.substr(md5_file($file->getRealPath()), 0, 10).'.'.$file->getClientOriginalExtension();
+        $filename = $name.'-'.substr(md5_file($file->getRealPath()), 0, 10).'.'.$file->extension();
 
         $file->move($dir, $filename);
 
         return self::BRANDING_DIR.'/'.$filename;
+    }
+
+    /**
+     * Deletes the file a new upload replaced. Only files this controller wrote
+     * (inside public/branding) are touched — the shipped defaults under
+     * public/images stay, so "reset to default" remains possible by hand.
+     */
+    private function removeReplacedBranding(?string $old, string $new): void
+    {
+        if ($old && $old !== $new && str_starts_with($old, self::BRANDING_DIR.'/') && is_file(public_path($old))) {
+            @unlink(public_path($old));
+        }
     }
 
     /** Rebuilds the favicons from a newly uploaded square icon. */

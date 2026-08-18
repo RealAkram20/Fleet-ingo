@@ -57,6 +57,17 @@ class UserManagementTest extends TestCase
             ->assertSee('>Settings<', escape: false);
     }
 
+    public function test_a_malformed_edit_parameter_does_not_crash_the_page(): void
+    {
+        $admin = $this->admin();
+
+        // ?edit[]=1 hands find() an array; the page must shrug it off, not 500.
+        $this->actingAs($admin)->get('/users?edit[]=1')->assertOk();
+        $this->actingAs($admin)->get('/bikes?edit[]=1')->assertOk();
+        $this->actingAs($admin)->get('/riders?edit[]=1')->assertOk();
+        $this->actingAs($admin)->get('/readings?edit[]=1')->assertOk();
+    }
+
     // -------------------------------------------------------------- create
 
     public function test_an_admin_can_create_a_clerk_and_another_admin(): void

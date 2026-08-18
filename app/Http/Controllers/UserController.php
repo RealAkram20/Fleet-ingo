@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UserRequest;
 use App\Models\User;
+use App\Support\Search;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -17,8 +18,8 @@ class UserController extends Controller
 
         $users = User::query()
             ->when($search, fn ($q) => $q->where(fn ($q) => $q
-                ->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%")))
+                ->whereRaw(Search::clause('name'), [Search::like($search)])
+                ->orWhereRaw(Search::clause('email'), [Search::like($search)])))
             ->orderByRaw("CASE WHEN role = ? THEN 0 ELSE 1 END", [User::ROLE_ADMIN])
             ->orderBy('name')
             ->get();
@@ -26,7 +27,9 @@ class UserController extends Controller
         return view('users.index', [
             'users' => $users,
             'search' => $search,
-            'editing' => $request->query('edit') ? User::find($request->query('edit')) : null,
+            // is_scalar: ?edit[]=1 would hand find() an array, which returns a
+            // Collection and takes the page down when the view reads ->name.
+            'editing' => is_scalar($id = $request->query('edit')) ? User::find($id) : null,
             'adminCount' => User::where('role', User::ROLE_ADMIN)->count(),
         ]);
     }

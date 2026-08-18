@@ -106,7 +106,7 @@
 
             <x-select-field label="Encryption" name="mail_encryption">
                 @foreach (['tls' => 'TLS (587)', 'ssl' => 'SSL (465)', 'none' => 'None'] as $value => $label)
-                    <option value="{{ $value }}" @selected(($settings['mail_encryption'] ?: 'none') === $value)>{{ $label }}</option>
+                    <option value="{{ $value }}" @selected(old('mail_encryption', $settings['mail_encryption'] ?: 'none') === $value)>{{ $label }}</option>
                 @endforeach
             </x-select-field>
 

@@ -28,7 +28,8 @@ class ReadingController extends Controller
             'bikes' => $bikes,
             'selected' => $selected,
             'history' => $history,
-            'editing' => $request->query('edit') ? Reading::find($request->query('edit')) : null,
+            // is_scalar: ?edit[]=1 would hand find() an array and 500 the page.
+            'editing' => is_scalar($id = $request->query('edit')) ? Reading::find($id) : null,
         ]);
     }
 

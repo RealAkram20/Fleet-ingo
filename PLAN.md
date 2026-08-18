@@ -326,6 +326,7 @@ being lost. Three ways back, in order of preference:
 | **PH 05** | Utilisation, projections, CSV, polling | 1 day | ⬜ |
 | **PH 06** | Cutover | Half a day | ⬜ |
 | **PH 07** | User management and app settings | 1 day | ✅ Done — 27 tests |
+| **PH 08** | Rate limiting and hardening | 1 day | ✅ Done — 16 tests |
 
 ### PH 00 — Scaffold and prove the URL
 
@@ -408,3 +409,83 @@ Carried over from the code review of `legacy/ingo-fleet-tracker.html`.
 2. **Export the Firestore document today.** Not on cutover day. It is the entire dataset and takes two
    minutes.
 3. **Folder name is `ingo`** (lowercase) — the rewrite condition and `APP_URL` both bake it in.
+
+
+---
+
+## 10. Security posture
+
+Added in PH 08. Every item below is covered by a test in `tests/Feature/SecurityTest.php`.
+
+### Rate limiting
+
+All limits live in `app/Providers/RateLimitServiceProvider.php`.
+
+| Limiter | Budget | Keyed by | Why |
+|---|---|---|---|
+| `login` | 10/min, 40/hour | IP | Breeze already limits per email+IP, which stops one account being ground down. This is the other half: one host spraying a common password across many addresses never trips the per-email limiter, because each guess uses a fresh key. |
+| `password-reset` | 3/min, 10/hour | IP | The app sends mail here, so it must not become a way to mailbomb someone. |
+| `writes` | 60/min | user | Anything that changes data. Far above real yard use — it exists to blunt a runaway script or a stolen session. |
+| `test-email` | 2/min, 10/hour | user | The only control that makes the app send to an arbitrary address. |
+| `global` | 300/min | user | A ceiling over everything else. |
+
+Proxy headers are trusted only from `127.0.0.1`. Trusting them from anywhere
+would let a client set its own `X-Forwarded-For` and walk past every per-IP
+limit above.
+
+### Bots
+
+Two invisible checks on the login and forgot-password forms, rather than a
+puzzle in front of a human:
+
+- A field a person never sees and never fills in.
+- How long the form was on screen. Under two seconds is not a person typing.
+
+A rejection is worded exactly like a wrong password, so a bot learns nothing
+about why it failed.
+
+### Injection
+
+- **SQL** — Eloquent binds everything. The one raw fragment (`orderByRaw` on the
+  users list) is parameterised.
+- **LIKE wildcards** — bindings stop injection but not the wildcards themselves:
+  a search of `%` matches every row and `%_%_%_%` forces a table walk that can
+  never be selective. `App\Support\Search` escapes them. The escape character is
+  `!`, deliberately not a backslash — MySQL processes backslash escapes inside
+  string literals and SQLite does not, so `ESCAPE '\'` would work in production
+  and silently fail in tests.
+- **XSS** — Blade escapes by default and no template uses `{!! !!}`. The CSP is
+  the backstop: `script-src 'self'` with no `unsafe-inline` or `unsafe-eval`, so
+  injected script cannot run even if something slipped through.
+- **Mass assignment** — the profile form cannot set `role`; asserted by test.
+- **Array injection** — `?edit[]=1` used to hand `find()` an array and take the
+  page down. Guarded with `is_scalar` on every screen that reads an `edit` id.
+- **Uploads** — the stored extension comes from the file's content, never its
+  name, so a `logo.php` carrying image bytes cannot land in the web root as an
+  executable script.
+
+### Session hijacking
+
+- **Bound to the browser.** A signed-in session records a fingerprint of its
+  User-Agent; a request carrying that cookie from anything else is signed out on
+  the spot. Deliberately **not** bound to the IP address — riders work on mobile
+  data where the IP changes constantly, and binding to it would sign people out
+  several times an hour and teach them to ignore it.
+- **Fixation** — the session id is regenerated on sign-in; asserted by test.
+- **At rest** — session payloads are encrypted, because they sit in a database
+  shared with every other project in this XAMPP install.
+- **Cookie** — `HttpOnly`, `SameSite=strict`, scoped to `/ingo`, and expiring
+  when the browser closes as well as after 8 hours.
+
+`SESSION_SECURE_COOKIE` is `false` only because this is served over plain HTTP
+on localhost. **Set it to `true` the moment the app is served over HTTPS.**
+
+### Content-Security-Policy and the Alpine removal
+
+The policy forbids `unsafe-eval`. Alpine evaluates its directives with
+`new Function()`, so the policy broke it — the password show/hide control
+rendered both icons and neither ever hid. Rather than weaken the policy, Alpine
+was removed: the only other things using it were orphaned Breeze components
+(nav dropdown, modal) that this app's own layout had already replaced. The
+toggle is now a few lines of delegated plain JS, and the JS bundle dropped from
+102 KB to 49 KB.

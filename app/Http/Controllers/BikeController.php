@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BikeRequest;
 use App\Models\Bike;
 use App\Models\Rider;
+use App\Support\Search;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,9 +20,9 @@ class BikeController extends Controller
             ->with('rider')
             ->withFleetStats()
             ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
-                $q->where('reg', 'like', "%{$search}%")
-                    ->orWhere('model', 'like', "%{$search}%")
-                    ->orWhereHas('rider', fn ($r) => $r->where('name', 'like', "%{$search}%"));
+                $q->whereRaw(Search::clause('reg'), [Search::like($search)])
+                    ->orWhereRaw(Search::clause('model'), [Search::like($search)])
+                    ->orWhereHas('rider', fn ($r) => $r->whereRaw(Search::clause('name'), [Search::like($search)]));
             }))
             ->orderBy('reg')
             ->get();
@@ -30,7 +31,8 @@ class BikeController extends Controller
             'bikes' => $bikes,
             'riders' => Rider::orderBy('name')->get(),
             'search' => $search,
-            'editing' => $request->query('edit') ? Bike::find($request->query('edit')) : null,
+            // is_scalar: ?edit[]=1 would hand find() an array and 500 the page.
+            'editing' => is_scalar($id = $request->query('edit')) ? Bike::find($id) : null,
         ]);
     }
 

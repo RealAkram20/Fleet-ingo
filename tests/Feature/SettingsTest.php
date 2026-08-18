@@ -92,6 +92,55 @@ class SettingsTest extends TestCase
         @unlink(public_path($path));
     }
 
+    public function test_an_upload_named_like_a_script_is_stored_under_its_real_type(): void
+    {
+        // Real PNG bytes, hostile filename. A genuine UploadedFile rather than
+        // UploadedFile::fake(), because the fake derives its mime type from the
+        // NAME while production sniffs the CONTENT — and content sniffing is
+        // how this file passes validation despite its name. Laravel itself
+        // blocks names ending .php/.phar, but not everything Apache can be
+        // configured to execute (.pht here), so the stored extension must come
+        // from the content, never the client's filename.
+        $png = tempnam(sys_get_temp_dir(), 'ingo');
+        $canvas = imagecreatetruecolor(60, 20);
+        imagepng($canvas, $png);
+        imagedestroy($canvas);
+
+        $this->actingAs($this->admin())->patch('/settings/branding', [
+            'app_name' => 'InGo Fleet Log',
+            'logo' => new UploadedFile($png, 'logo.pht', 'image/png', null, true),
+        ])->assertSessionHasNoErrors();
+
+        $path = Settings::get('logo_path');
+
+        $this->assertStringEndsWith('.png', $path, 'The stored extension must reflect the content, not the client filename.');
+
+        @unlink(public_path($path));
+    }
+
+    public function test_a_replaced_logo_file_is_deleted_from_disk(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->patch('/settings/branding', [
+            'app_name' => 'InGo Fleet Log',
+            'logo' => UploadedFile::fake()->image('one.png', 600, 200),
+        ]);
+        $first = Settings::get('logo_path');
+
+        $this->actingAs($admin)->patch('/settings/branding', [
+            'app_name' => 'InGo Fleet Log',
+            'logo' => UploadedFile::fake()->image('two.png', 640, 200),
+        ]);
+        $second = Settings::get('logo_path');
+
+        $this->assertNotSame($first, $second);
+        $this->assertFileDoesNotExist(public_path($first), 'The replaced logo must not pile up on disk.');
+        $this->assertFileExists(public_path($second));
+
+        @unlink(public_path($second));
+    }
+
     public function test_a_non_image_is_rejected_as_a_logo(): void
     {
         $this->actingAs($this->admin())->patch('/settings/branding', [
@@ -196,6 +245,52 @@ class SettingsTest extends TestCase
         $this->actingAs($admin)->patch('/settings/mail', $base + ['mail_password' => '']);
 
         $this->assertSame('super-secret', Settings::get('mail_password'));
+    }
+
+    public function test_choosing_no_encryption_does_not_silently_become_tls(): void
+    {
+        $this->actingAs($this->admin())->patch('/settings/mail', [
+            'mail_host' => 'localhost',
+            'mail_port' => 1025,
+            'mail_encryption' => 'none',
+            'mail_from_address' => 'fleet@example.com',
+            'mail_from_name' => 'InGo Fleet',
+        ])->assertSessionHasNoErrors();
+
+        // A blank stored value must win over the config default of "tls",
+        // otherwise "None" is impossible to select at all.
+        $this->assertSame('', Settings::get('mail_encryption'));
+    }
+
+    public function test_a_cleared_tagline_stays_cleared(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->patch('/settings/branding', ['app_name' => 'InGo Fleet Log', 'tagline' => 'Temporary words']);
+        $this->actingAs($admin)->patch('/settings/branding', ['app_name' => 'InGo Fleet Log', 'tagline' => '']);
+
+        $this->assertSame('', Settings::get('tagline'));
+
+        $this->actingAs($admin)->get('/dashboard')
+            ->assertOk()
+            ->assertDontSee('HARARE OPS'); // the config default must not resurface
+    }
+
+    public function test_a_blanked_default_months_interval_means_distance_only(): void
+    {
+        $this->actingAs($this->admin())->patch('/settings/fleet', [
+            'default_service_interval_km' => 3000,
+            'default_service_interval_months' => '',
+            'due_soon_km' => 300,
+            'due_soon_days' => 30,
+            'licence_warn_days' => 30,
+            'timezone' => 'Africa/Harare',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertNull(
+            Settings::get('default_service_interval_months'),
+            'Blank must mean "no months default", not fall back to the config value of 6.',
+        );
     }
 
     public function test_a_port_is_required_once_a_host_is_given(): void

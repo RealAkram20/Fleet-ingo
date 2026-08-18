@@ -59,9 +59,11 @@ class Setting extends Model
 
     public static function get(string $key, mixed $default = null): mixed
     {
-        $value = static::values()[$key] ?? null;
+        $values = static::values();
 
-        return ($value === null || $value === '') ? $default : $value;
+        // A stored row is authoritative even when blank: an admin clearing the
+        // tagline, or picking "no encryption", must not get the default back.
+        return array_key_exists($key, $values) ? $values[$key] : $default;
     }
 
     public static function put(string $key, mixed $value): void

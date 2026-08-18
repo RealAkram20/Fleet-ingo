@@ -6,6 +6,7 @@
 
     <form method="POST" action="{{ route('login') }}" class="space-y-5">
         @csrf
+        <x-honeypot />
 
         <div>
             <x-input-label for="email" :value="__('Email')" class="mb-1.5" />
