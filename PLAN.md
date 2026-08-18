@@ -321,7 +321,7 @@ being lost. Three ways back, in order of preference:
 | Phase | Work | Effort | Status |
 |---|---|---|---|
 | **PH 00** | Scaffold and prove the URL | Half a day | ✅ Done |
-| **PH 01** | Schema, models, status logic, tests | 1 day | 🟡 Migrations + models done; factories, seeder and tests outstanding |
+| **PH 01** | Schema, models, status logic, tests | 1 day | ✅ Done — 28 tests, full suite 53 green |
 | **PH 02** | Firestore import command | Half a day | ⬜ Blocked on the Firestore export |
 | **PH 03** | The four screens in Blade + Tailwind | 2–3 days | ⬜ |
 | **PH 04** | Auth and roles | Half a day | ⬜ Breeze installed; registration still open, roles not enforced |
