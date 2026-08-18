@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap') layer(base);
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+/* Breeze installs class-based dark mode; v4 expresses that as a custom variant. */
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    /* Carried over from the original tracker so the yard identity survives the rebuild. */
+    --color-asphalt-900: #1C1F22;
+    --color-asphalt-800: #262B2F;
+    --color-asphalt-700: #2F363B;
+    --color-asphalt-600: #3A4147;
+
+    --color-plate-50: #F1EEE6;
+    --color-plate-300: #C9C4B8;
+
+    --color-ingo-500: #E85D2C;
+    --color-ingo-900: #5C2A17;
+
+    --color-status-ok: #3FA34D;
+    --color-status-ok-dim: #173B1D;
+    --color-status-warn: #F2B705;
+    --color-status-warn-dim: #4A3B04;
+    --color-status-bad: #D64545;
+    --color-status-bad-dim: #4A1A1A;
+
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+    --font-mono: 'Roboto Mono', ui-monospace, monospace;
+}

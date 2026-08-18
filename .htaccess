@@ -1,0 +1,21 @@
+# Subfolder deployment for http://localhost/ingo
+# Scoped to this directory — requests to sibling htdocs projects never see these rules.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Never serve dotfiles (.env, .git) if one is requested directly
+    RedirectMatch 404 /\.(?!well-known)
+
+    # Real files that live under public/ — built assets, favicon, robots.txt.
+    # The !-f guard matters: without it the rewrite below restarts the ruleset,
+    # this rule then matches the root index.php shim and maps it into public/,
+    # and Laravel loses its /ingo base path again.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{DOCUMENT_ROOT}/ingo/public/$1 -f
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Everything else goes through the root shim, which loads public/index.php
+    RewriteCond %{REQUEST_URI} !^/ingo/public/
+    RewriteRule ^(.*)$ index.php [L]
+</IfModule>
