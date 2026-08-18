@@ -323,8 +323,8 @@ being lost. Three ways back, in order of preference:
 | **PH 00** | Scaffold and prove the URL | Half a day | ✅ Done |
 | **PH 01** | Schema, models, status logic, tests | 1 day | ✅ Done — 28 tests, full suite 53 green |
 | **PH 02** | Firestore import command | Half a day | ⬜ Blocked on the Firestore export |
-| **PH 03** | The four screens in Blade + Tailwind | 2–3 days | ⬜ |
-| **PH 04** | Auth and roles | Half a day | ⬜ Breeze installed; registration still open, roles not enforced |
+| **PH 03** | The four screens in Blade + Tailwind | 2–3 days | ✅ Done — 23 screen tests |
+| **PH 04** | Auth and roles | Half a day | 🟡 Screens are behind auth; registration still open, roles not enforced |
 | **PH 05** | Utilisation, projections, CSV, polling | 1 day | ⬜ |
 | **PH 06** | Cutover | Half a day | ⬜ |
 

@@ -1,0 +1,92 @@
+@extends('layouts.app')
+@section('title', 'Riders')
+
+@section('content')
+
+<h2 class="m-0 font-display text-xl uppercase tracking-wide">Riders</h2>
+<p class="mb-5 mt-1 text-[13px] text-plate-300">Rider details and licence expiry.</p>
+
+<x-panel :title="$editing ? 'Edit Rider' : 'Add Rider'">
+    <form method="POST" action="{{ $editing ? route('riders.update', $editing) : route('riders.store') }}">
+        @csrf
+        @if ($editing) @method('PATCH') @endif
+
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+            <x-field label="Full name" name="name" required :value="$editing?->name" placeholder="Rider name" />
+            <x-field label="Phone" name="phone" :value="$editing?->phone" placeholder="e.g. 0771234567" />
+            <x-field label="Licence number" name="license_number" :value="$editing?->license_number" placeholder="Licence no." />
+            <x-field label="Licence expiry date" name="license_expiry" type="date"
+                     :value="$editing?->license_expiry?->toDateString()"
+                     hint="Leave blank if not yet on file." />
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+            <x-btn variant="primary">{{ $editing ? 'Save Rider' : 'Add Rider' }}</x-btn>
+            @if ($editing)
+                <x-btn variant="ghost" :href="route('riders.index')">Cancel Edit</x-btn>
+            @endif
+        </div>
+    </form>
+</x-panel>
+
+<x-panel flush>
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-asphalt-600 px-5 py-3.5">
+        <h2 class="m-0 font-display text-[15px] uppercase tracking-wide">
+            {{ $riders->count() }} {{ Str::plural('rider', $riders->count()) }}
+        </h2>
+        <form method="GET" action="{{ route('riders.index') }}" class="flex gap-2">
+            <input type="search" name="q" value="{{ $search }}" placeholder="Search name, phone, licence"
+                   class="w-56 rounded-sm border border-asphalt-600 bg-asphalt-900 px-3 py-1.5 text-[13px] text-plate-50 outline-none placeholder:text-plate-300/40 focus:border-ingo-500">
+            <x-btn variant="small">Search</x-btn>
+            @if ($search)
+                <x-btn variant="ghost" :href="route('riders.index')">Clear</x-btn>
+            @endif
+        </form>
+    </div>
+
+    @if ($riders->isEmpty())
+        <p class="m-0 px-5 py-8 text-center text-[14px] text-plate-300">
+            {{ $search ? 'No riders match that search.' : 'No riders yet. Add your first rider above.' }}
+        </p>
+    @else
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-[14px]">
+                <thead>
+                    <tr class="bg-asphalt-900 text-left font-mono text-[10px] uppercase tracking-widest text-plate-300">
+                        <th class="px-5 py-2.5 font-semibold">Name</th>
+                        <th class="px-5 py-2.5 font-semibold">Phone</th>
+                        <th class="px-5 py-2.5 font-semibold">Licence No.</th>
+                        <th class="px-5 py-2.5 font-semibold">Expiry</th>
+                        <th class="px-5 py-2.5 font-semibold">Status</th>
+                        <th class="px-5 py-2.5 font-semibold">Bikes</th>
+                        <th class="px-5 py-2.5"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($riders as $rider)
+                        <tr class="border-t border-asphalt-600 {{ $editing?->is($rider) ? 'bg-asphalt-700' : '' }}">
+                            <td class="px-5 py-3">{{ $rider->name }}</td>
+                            <td class="px-5 py-3 font-mono tabular-nums text-plate-300">{{ $rider->phone ?: '—' }}</td>
+                            <td class="px-5 py-3 font-mono text-plate-300">{{ $rider->license_number ?: '—' }}</td>
+                            <td class="px-5 py-3 tabular-nums">{{ $rider->license_expiry?->format('d M Y') ?? '—' }}</td>
+                            <td class="px-5 py-3"><x-status-badge :status="$rider->licenseStatus()" /></td>
+                            <td class="px-5 py-3 tabular-nums text-plate-300">{{ $rider->bikes_count }}</td>
+                            <td class="px-5 py-3">
+                                <div class="flex justify-end gap-2">
+                                    <x-btn variant="small" :href="route('riders.index', ['edit' => $rider->id])">Edit</x-btn>
+                                    <form method="POST" action="{{ route('riders.destroy', $rider) }}"
+                                          onsubmit="return confirm('Remove {{ $rider->name }} from the roster? Their bikes stay assigned and their history is kept.')">
+                                        @csrf @method('DELETE')
+                                        <x-btn variant="danger">Remove</x-btn>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+</x-panel>
+
+@endsection
