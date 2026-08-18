@@ -21,6 +21,6 @@ class ExampleTest extends TestCase
         $this->followingRedirects()
             ->get('/')
             ->assertOk()
-            ->assertSee('Log in', escape: false);
+            ->assertSee('Sign in', escape: false);
     }
 }

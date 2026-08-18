@@ -20,8 +20,15 @@
     --color-plate-50: #F1EEE6;
     --color-plate-300: #C9C4B8;
 
-    --color-ingo-500: #E85D2C;
+    /* Sampled from the brand mark in public/images/ingo-logo.png */
+    --color-ingo-500: #FD790A;
+    --color-ingo-600: #E06806;
     --color-ingo-900: #5C2A17;
+
+    /* The logo's blue is too dark to read on asphalt, so it stays a mark
+       colour; the lighter tint is what carries it into the interface. */
+    --color-brand-blue: #0043A9;
+    --color-brand-blue-300: #6FA0EE;
 
     --color-status-ok: #3FA34D;
     --color-status-ok-dim: #173B1D;

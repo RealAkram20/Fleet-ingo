@@ -7,6 +7,10 @@
 
     <title>@yield('title', 'Fleet Log') — {{ config('app.name') }}</title>
 
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-asphalt-900 font-sans text-plate-50 antialiased">
@@ -14,11 +18,15 @@
 <header class="border-b-[3px] border-ingo-500 bg-asphalt-800 bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.02)_0_2px,transparent_2px_14px)]">
     <div class="mx-auto max-w-6xl px-5 pb-0 pt-7">
         <div class="flex flex-wrap items-baseline justify-between gap-4">
-            <div class="flex flex-wrap items-baseline gap-3.5">
-                <h1 class="m-0 font-display text-[34px] font-bold uppercase tracking-wide">
-                    IN<span class="text-ingo-500">GO</span> FLEET LOG
-                </h1>
-                <p class="m-0 font-mono text-[13px] tracking-wide text-plate-300">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <a href="{{ route('dashboard') }}" class="shrink-0">
+                    <img src="{{ asset('images/ingo-logo.png') }}"
+                         alt="InGo"
+                         width="640" height="213"
+                         class="h-11 w-auto">
+                </a>
+                <h1 class="m-0 font-display text-[30px] font-bold uppercase tracking-wide">Fleet Log</h1>
+                <p class="m-0 font-mono text-[12px] tracking-wide text-plate-300">
                     RIDER · MILEAGE · SERVICE TRACKING — HARARE OPS
                 </p>
             </div>
