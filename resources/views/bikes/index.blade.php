@@ -6,6 +6,7 @@
 <h2 class="m-0 font-display text-xl uppercase tracking-wide">Bikes</h2>
 <p class="mb-5 mt-1 text-[13px] text-plate-300">Bike details, service interval and assigned rider.</p>
 
+@can('manage-fleet')
 <x-panel :title="$editing ? 'Edit Bike' : 'Add Bike'"
          subtitle="Mileage is not set here — it comes from the readings, so a correction there fixes everything downstream.">
     <form method="POST" action="{{ $editing ? route('bikes.update', $editing) : route('bikes.store') }}">
@@ -41,6 +42,7 @@
         </div>
     </form>
 </x-panel>
+@endcan
 
 <x-panel flush>
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-asphalt-600 px-5 py-3.5">
@@ -59,7 +61,15 @@
 
     @if ($bikes->isEmpty())
         <p class="m-0 px-5 py-8 text-center text-[14px] text-plate-300">
-            {{ $search ? 'No bikes match that search.' : 'No bikes yet. Add your first bike above.' }}
+            @if ($search)
+                No bikes match that search.
+            @else
+                @can('manage-fleet')
+                    No bikes yet. Add your first bike above.
+                @else
+                    No bikes have been added yet.
+                @endcan
+            @endif
         </p>
     @else
         <div class="overflow-x-auto">
@@ -85,14 +95,16 @@
                             <td class="px-5 py-3 font-mono tabular-nums text-plate-300">{{ number_format($bike->nextServiceAtKm()) }} km</td>
                             <td class="px-5 py-3"><x-status-badge :status="$bike->serviceStatus()" /></td>
                             <td class="px-5 py-3">
-                                <div class="flex justify-end gap-2">
-                                    <x-btn variant="small" :href="route('bikes.index', ['edit' => $bike->id])">Edit</x-btn>
-                                    <form method="POST" action="{{ route('bikes.destroy', $bike) }}"
-                                          onsubmit="return confirm('Remove {{ $bike->reg }} from the fleet? Its readings and service history are kept.')">
-                                        @csrf @method('DELETE')
-                                        <x-btn variant="danger">Remove</x-btn>
-                                    </form>
-                                </div>
+                                @can('manage-fleet')
+                                    <div class="flex justify-end gap-2">
+                                        <x-btn variant="small" :href="route('bikes.index', ['edit' => $bike->id])">Edit</x-btn>
+                                        <form method="POST" action="{{ route('bikes.destroy', $bike) }}"
+                                              onsubmit="return confirm('Remove {{ $bike->reg }} from the fleet? Its readings and service history are kept.')">
+                                            @csrf @method('DELETE')
+                                            <x-btn variant="danger">Remove</x-btn>
+                                        </form>
+                                    </div>
+                                @endcan
                             </td>
                         </tr>
                     @endforeach

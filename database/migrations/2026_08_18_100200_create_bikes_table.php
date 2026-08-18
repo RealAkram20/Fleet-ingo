@@ -19,7 +19,6 @@ return new class extends Migration
             $table->unsignedSmallInteger('service_interval_months')->nullable()->default(6);
 
             $table->boolean('is_active')->default(true);
-            $table->string('legacy_id', 40)->nullable()->unique();
 
             $table->timestamps();
             $table->softDeletes();

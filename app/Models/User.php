@@ -13,6 +13,11 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    /** Only an admin may change the fleet itself; a clerk logs readings. */
+    public const ROLE_ADMIN = 'admin';
+
+    public const ROLE_CLERK = 'clerk';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -22,7 +27,13 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
 
     /**
      * The attributes that should be hidden for serialization.

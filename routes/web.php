@@ -21,8 +21,14 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/bikes/{bike}/service', [ServiceRecordController::class, 'store'])->name('services.store');
 
-    Route::resource('riders', RiderController::class)->except(['show', 'create']);
-    Route::resource('bikes', BikeController::class)->except(['show', 'create']);
+    // Reading the roster is fine for anyone signed in; changing it is not.
+    Route::get('riders', [RiderController::class, 'index'])->name('riders.index');
+    Route::get('bikes', [BikeController::class, 'index'])->name('bikes.index');
+
+    Route::middleware('can:manage-fleet')->group(function () {
+        Route::resource('riders', RiderController::class)->except(['show', 'create', 'index']);
+        Route::resource('bikes', BikeController::class)->except(['show', 'create', 'index']);
+    });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

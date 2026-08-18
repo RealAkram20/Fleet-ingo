@@ -17,7 +17,6 @@ class Rider extends Model
         'license_number',
         'license_expiry',
         'is_active',
-        'legacy_id',
     ];
 
     protected function casts(): array

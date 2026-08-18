@@ -27,7 +27,6 @@ class Bike extends Model
         'service_interval_km',
         'service_interval_months',
         'is_active',
-        'legacy_id',
     ];
 
     protected function casts(): array

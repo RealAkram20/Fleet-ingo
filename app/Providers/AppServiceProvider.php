@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        /*
+         * Riders, bikes and service intervals are the fleet's shape, and only an
+         * admin changes them. A clerk can still log readings and mark a bike
+         * serviced, which is the whole of the day-to-day yard job.
+         */
+        Gate::define('manage-fleet', fn (User $user) => $user->isAdmin());
     }
 }

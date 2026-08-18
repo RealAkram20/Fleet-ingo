@@ -6,6 +6,7 @@
 <h2 class="m-0 font-display text-xl uppercase tracking-wide">Riders</h2>
 <p class="mb-5 mt-1 text-[13px] text-plate-300">Rider details and licence expiry.</p>
 
+@can('manage-fleet')
 <x-panel :title="$editing ? 'Edit Rider' : 'Add Rider'">
     <form method="POST" action="{{ $editing ? route('riders.update', $editing) : route('riders.store') }}">
         @csrf
@@ -28,6 +29,7 @@
         </div>
     </form>
 </x-panel>
+@endcan
 
 <x-panel flush>
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-asphalt-600 px-5 py-3.5">
@@ -46,7 +48,15 @@
 
     @if ($riders->isEmpty())
         <p class="m-0 px-5 py-8 text-center text-[14px] text-plate-300">
-            {{ $search ? 'No riders match that search.' : 'No riders yet. Add your first rider above.' }}
+            @if ($search)
+                No riders match that search.
+            @else
+                @can('manage-fleet')
+                    No riders yet. Add your first rider above.
+                @else
+                    No riders have been added yet.
+                @endcan
+            @endif
         </p>
     @else
         <div class="overflow-x-auto">
@@ -72,14 +82,16 @@
                             <td class="px-5 py-3"><x-status-badge :status="$rider->licenseStatus()" /></td>
                             <td class="px-5 py-3 tabular-nums text-plate-300">{{ $rider->bikes_count }}</td>
                             <td class="px-5 py-3">
-                                <div class="flex justify-end gap-2">
-                                    <x-btn variant="small" :href="route('riders.index', ['edit' => $rider->id])">Edit</x-btn>
-                                    <form method="POST" action="{{ route('riders.destroy', $rider) }}"
-                                          onsubmit="return confirm('Remove {{ $rider->name }} from the roster? Their bikes stay assigned and their history is kept.')">
-                                        @csrf @method('DELETE')
-                                        <x-btn variant="danger">Remove</x-btn>
-                                    </form>
-                                </div>
+                                @can('manage-fleet')
+                                    <div class="flex justify-end gap-2">
+                                        <x-btn variant="small" :href="route('riders.index', ['edit' => $rider->id])">Edit</x-btn>
+                                        <form method="POST" action="{{ route('riders.destroy', $rider) }}"
+                                              onsubmit="return confirm('Remove {{ $rider->name }} from the roster? Their bikes stay assigned and their history is kept.')">
+                                            @csrf @method('DELETE')
+                                            <x-btn variant="danger">Remove</x-btn>
+                                        </form>
+                                    </div>
+                                @endcan
                             </td>
                         </tr>
                     @endforeach

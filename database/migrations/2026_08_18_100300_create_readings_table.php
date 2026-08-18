@@ -15,7 +15,6 @@ return new class extends Migration
             $table->unsignedInteger('mileage');
             $table->string('note')->nullable();
             $table->foreignId('recorded_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('legacy_id', 40)->nullable()->unique();
             $table->timestamps();
 
             // one reading per bike per day, and the index the dashboard leans on

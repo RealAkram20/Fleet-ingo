@@ -281,23 +281,21 @@ cleanest part of the original. They become methods on the models, returning the 
 
 ---
 
-## 5. Getting the Firestore data out
+## 5. Getting the Firestore data out — cancelled
 
-All existing data is in one document, `ingoFleet/data`, which makes this the easy part.
+**Decision, 18 August 2026: no import.** The fleet will be entered by hand in the new app, so the
+`ingo:import-firestore` command was never written.
 
-1. **Export** — dump the document to JSON from the Firebase console or the browser console. Save to
-   `storage/app/import/firestore-export.json`.
-2. **Import** — one artisan command, `php artisan ingo:import-firestore`, mapping riders → bikes →
-   readings in that order so foreign keys resolve.
-3. **Make it idempotent** — every row keeps its old Firestore string ID in `legacy_id`, and the
-   command uses `updateOrCreate` on it. Run it as many times as you like; no duplicates, and it can be
-   re-run after a late reading comes in during changeover.
-4. **Backfill service records** — each bike's `lastServiceDate` and `lastServiceMileage` become one
-   seed row in `service_records`.
-5. **Verify** — compare rider, bike and reading counts against the JSON, and spot-check that three
-   bikes show the same current mileage in both systems before cutting over.
+Consequences already applied:
 
----
+- The `legacy_id` columns are gone from `riders`, `bikes` and `readings`. They existed only so a
+  repeated import could match rows without duplicating, which no longer applies.
+- `legacy/ingo-fleet-tracker.html` stays in the repository as the reference implementation, and the
+  Firestore project can be shut down once the fleet is re-entered here.
+- Cutover (PH 06) is simpler: there is no reconciliation step, just a switchover once the data is in.
+
+If the decision is ever reversed, the old app's export is a single document at `ingoFleet/data` and
+the import would need `legacy_id` reinstated first.
 
 ## 6. Replacing live sync
 
@@ -322,9 +320,9 @@ being lost. Three ways back, in order of preference:
 |---|---|---|---|
 | **PH 00** | Scaffold and prove the URL | Half a day | ✅ Done |
 | **PH 01** | Schema, models, status logic, tests | 1 day | ✅ Done — 28 tests, full suite 53 green |
-| **PH 02** | Firestore import command | Half a day | ⬜ Blocked on the Firestore export |
+| **PH 02** | Firestore import command | — | ❌ Cancelled — data will be entered by hand |
 | **PH 03** | The four screens in Blade + Tailwind | 2–3 days | ✅ Done — 23 screen tests |
-| **PH 04** | Auth and roles | Half a day | 🟡 Screens are behind auth; registration still open, roles not enforced |
+| **PH 04** | Auth and roles | Half a day | ✅ Done — 12 role tests |
 | **PH 05** | Utilisation, projections, CSV, polling | 1 day | ⬜ |
 | **PH 06** | Cutover | Half a day | ⬜ |
 
@@ -343,11 +341,9 @@ Four migrations, four models with their relationships, and the ported `serviceSt
 Write the tests here, while the logic is fresh and small — service intervals, remaining kilometres and
 licence-expiry windows are pure functions and the calculations the business actually depends on.
 
-### PH 02 — The Firestore import command
+### PH 02 — The Firestore import command — cancelled
 
-Export the document, write `ingo:import-firestore`, run it against real data, and verify counts. Doing
-this before the UI means every screen afterwards is developed against the actual fleet rather than
-invented rows.
+See section 5. The fleet is being entered by hand, so there is nothing to import.
 
 ### PH 03 — The four screens in Blade and Tailwind
 

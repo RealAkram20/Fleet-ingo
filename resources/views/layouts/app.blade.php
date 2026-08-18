@@ -27,6 +27,7 @@
                 @csrf
                 <span class="mr-3 font-mono text-[11px] uppercase tracking-widest text-plate-300">
                     {{ auth()->user()->name }}
+                    <span class="ml-1 rounded-sm border border-asphalt-600 px-1.5 py-0.5 text-[9px] text-plate-300/70">{{ auth()->user()->role }}</span>
                 </span>
                 <button type="submit"
                         class="cursor-pointer border-none bg-transparent font-mono text-[11px] uppercase tracking-widest text-plate-300 underline underline-offset-4 transition hover:text-ingo-500">

@@ -16,8 +16,6 @@ return new class extends Migration
             $table->date('license_expiry')->nullable();
             $table->boolean('is_active')->default(true);
 
-            // Firestore document id, kept so the import can re-run without duplicating
-            $table->string('legacy_id', 40)->nullable()->unique();
 
             $table->timestamps();
             $table->softDeletes();

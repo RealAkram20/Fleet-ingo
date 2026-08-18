@@ -22,7 +22,10 @@ class FleetScreensTest extends TestCase
         parent::setUp();
 
         Carbon::setTestNow('2026-08-18 09:00:00');
-        $this->user = User::factory()->create();
+
+        // These cover the screens themselves, so the actor needs full access.
+        // Who may do what is covered separately in RolesTest.
+        $this->user = User::factory()->create(['role' => User::ROLE_ADMIN]);
     }
 
     protected function tearDown(): void

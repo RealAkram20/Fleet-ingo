@@ -16,7 +16,6 @@ class Reading extends Model
         'mileage',
         'note',
         'recorded_by',
-        'legacy_id',
     ];
 
     protected function casts(): array
