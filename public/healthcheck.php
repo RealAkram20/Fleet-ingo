@@ -3,16 +3,16 @@
 /*
  * Standalone deployment health check for InGo Fleet Log.
  * -----------------------------------------------------------------------------
- * A plain PHP file that does NOT boot Laravel, so it still answers when the app
- * itself is dying during bootstrap (the blank "500 / 0 bytes" case). It reports
- * exactly which folders are not writable, whether the required PHP extensions
- * are present, and whether the database connects.
+ * A plain PHP file that first reports environment facts WITHOUT booting Laravel
+ * (so it answers even when the app is dying), and then tries to boot Laravel and
+ * handle a request, capturing the real exception — including fatals — so the
+ * blank "500 / 0 bytes" case stops being a mystery.
  *
  * Reach it at:  https://fleet.ingo.co.zw/healthcheck.php
  *
  * SECURITY: this exposes environment facts, so DELETE IT once the site is up.
- * To gate it meanwhile, set HEALTHCHECK_TOKEN=something in .env and then visit
- * /healthcheck.php?token=something. It never prints the DB password or APP_KEY.
+ * Gate it meanwhile with HEALTHCHECK_TOKEN=... in .env, then /healthcheck.php?token=...
+ * It never prints the DB password or APP_KEY.
  * -----------------------------------------------------------------------------
  */
 
@@ -20,13 +20,34 @@ header('Content-Type: text/plain; charset=utf-8');
 header('X-Robots-Tag: noindex, nofollow');
 header('Cache-Control: no-store');
 
-// Buffer everything so the HTTP status can be set from the result, after the
-// checks have run but before a single byte goes to the client.
+// Buffer everything so the HTTP status can be set from the result — and so a
+// fatal during the Laravel-boot probe still flushes what we gathered.
 ob_start();
 
+$GLOBALS['hc_fail'] = 0;
 $root = dirname(__DIR__);
 
-/* --- minimal .env reader (Laravel is not available here) ------------------- */
+// If a fatal kills us mid-probe, still emit the buffer and a clear note.
+register_shutdown_function(function () {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        echo "\n  [XX] FATAL during Laravel boot:\n";
+        echo '       '.$e['message']."\n";
+        echo '       at '.$e['file'].':'.$e['line']."\n";
+        echo "       => this is almost always an incomplete vendor/ upload. Re-upload vendor/.\n";
+        $GLOBALS['hc_fail']++;
+    }
+    if ($GLOBALS['hc_fail'] > 0 && ! headers_sent()) {
+        http_response_code(500);
+    }
+    echo "\n".str_repeat('-', 70)."\n";
+    echo ($GLOBALS['hc_fail'] === 0)
+        ? "RESULT: ALL HARD CHECKS PASSED. Delete this file (public/healthcheck.php).\n"
+        : "RESULT: {$GLOBALS['hc_fail']} check(s) failed — fix the [XX] lines, then reload. Delete this file after.\n";
+    ob_end_flush();
+});
+
+/* --- minimal .env reader (Laravel not loaded yet) -------------------------- */
 function read_env(string $path): array
 {
     $env = [];
@@ -41,7 +62,6 @@ function read_env(string $path): array
         [$key, $value] = explode('=', $line, 2);
         $key = trim($key);
         $value = trim($value);
-        // strip one layer of matching quotes
         if (strlen($value) >= 2 && ($value[0] === '"' || $value[0] === "'") && substr($value, -1) === $value[0]) {
             $value = substr($value, 1, -1);
         }
@@ -52,39 +72,32 @@ function read_env(string $path): array
 
 $env = read_env($root.'/.env');
 
-/* --- optional token gate --------------------------------------------------- */
 $token = $env['HEALTHCHECK_TOKEN'] ?? '';
 if ($token !== '' && (($_GET['token'] ?? '') !== $token)) {
     http_response_code(403);
     echo "Health check is token-protected. Append ?token=... to the URL.\n";
+    ob_end_flush();
     exit;
 }
 
-$fail = 0;
 $line = str_repeat('-', 70);
 
-// A hard check: failing one means the site cannot serve, so it sets HTTP 500.
 function ok(string $label, bool $pass, string $detail = ''): void
 {
-    global $fail;
     if (! $pass) {
-        $fail++;
+        $GLOBALS['hc_fail']++;
     }
     printf("  [%s] %-42s %s\n", $pass ? 'OK' : 'XX', $label, $detail);
 }
-
-// An advisory: worth flagging (e.g. debug left on) but not a reason to 500.
 function note(string $label, bool $good, string $detail = ''): void
 {
     printf("  [%s] %-42s %s\n", $good ? 'OK' : '..', $label, $detail);
 }
 
-echo "InGo Fleet Log — deployment health check\n";
-echo "$line\n";
+echo "InGo Fleet Log — deployment health check\n$line\n";
 echo 'When:   '.date('Y-m-d H:i:s')."\n";
 echo 'Root:   '.$root."\n";
-echo 'DocRoot:'.($_SERVER['DOCUMENT_ROOT'] ?? '?')."\n";
-echo "$line\n";
+echo 'DocRoot:'.($_SERVER['DOCUMENT_ROOT'] ?? '?')."\n$line\n";
 
 /* --- PHP ------------------------------------------------------------------- */
 echo "PHP\n";
@@ -97,25 +110,14 @@ echo "$line\n";
 /* --- .env ------------------------------------------------------------------ */
 echo ".env\n";
 ok('.env exists and is readable', is_file($root.'/.env') && is_readable($root.'/.env'));
-ok('APP_KEY is set', ! empty($env['APP_KEY']), empty($env['APP_KEY']) ? 'MISSING — run key:generate' : 'present');
+ok('APP_KEY is set', ! empty($env['APP_KEY']), empty($env['APP_KEY']) ? 'MISSING — key:generate' : 'present');
 note('APP_DEBUG is off', ($env['APP_DEBUG'] ?? 'false') === 'false', $env['APP_DEBUG'] ?? '(unset)');
 note('APP_URL is https', str_starts_with($env['APP_URL'] ?? '', 'https://'), $env['APP_URL'] ?? '(unset)');
 echo "$line\n";
 
-/* --- writable folders (actually try to write) ------------------------------ */
-echo "Writable folders  (the usual cause of a blank 500)\n";
-$dirs = [
-    'bootstrap/cache',
-    'storage',
-    'storage/framework',
-    'storage/framework/cache',
-    'storage/framework/cache/data',
-    'storage/framework/sessions',
-    'storage/framework/views',
-    'storage/logs',
-    'public/branding',
-];
-foreach ($dirs as $rel) {
+/* --- writable folders ------------------------------------------------------ */
+echo "Writable folders\n";
+foreach (['bootstrap/cache', 'storage', 'storage/framework', 'storage/framework/cache', 'storage/framework/cache/data', 'storage/framework/sessions', 'storage/framework/views', 'storage/logs', 'public/branding'] as $rel) {
     $dir = $root.'/'.$rel;
     if (! is_dir($dir)) {
         ok($rel, false, 'MISSING — create it');
@@ -130,56 +132,88 @@ foreach ($dirs as $rel) {
 }
 echo "$line\n";
 
+/* --- vendor completeness --------------------------------------------------- */
+echo "vendor/\n";
+$autoload = $root.'/vendor/autoload.php';
+ok('vendor/autoload.php exists', is_file($autoload), is_file($autoload) ? '' : 'MISSING — re-upload vendor/');
+$vendorFiles = null;
+if (is_dir($root.'/vendor')) {
+    $vendorFiles = iterator_count(new FilesystemIterator($root.'/vendor', FilesystemIterator::SKIP_DOTS));
+    echo "  vendor/ top-level entries: $vendorFiles (a healthy install has dozens)\n";
+}
+echo "$line\n";
+
 /* --- database -------------------------------------------------------------- */
 echo "Database\n";
-$driver = $env['DB_CONNECTION'] ?? 'mysql';
 $host = $env['DB_HOST'] ?? '127.0.0.1';
 $port = $env['DB_PORT'] ?? '3306';
 $name = $env['DB_DATABASE'] ?? '';
 $user = $env['DB_USERNAME'] ?? '';
 $pass = $env['DB_PASSWORD'] ?? '';
 echo "  Target: {$user}@{$host}:{$port}/{$name}  (password ".($pass === '' ? 'EMPTY' : 'set, '.strlen($pass).' chars').")\n";
+try {
+    $pdo = new PDO("mysql:host={$host};port={$port};dbname={$name}", $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 5]);
+    ok('Connection', true, 'connected');
+    $have = [];
+    foreach ($pdo->query('SHOW TABLES') as $r) {
+        $have[strtolower($r[0])] = true;
+    }
+    foreach (['users', 'settings', 'sessions', 'cache', 'migrations'] as $t) {
+        ok("table: $t", isset($have[$t]), isset($have[$t]) ? '' : 'MISSING — import the SQL');
+    }
+} catch (Throwable $e) {
+    ok('Connection', false, 'FAILED: '.$e->getMessage());
+}
+echo "$line\n";
 
-if ($driver !== 'mysql') {
-    ok('Connection', false, "DB_CONNECTION is '$driver', expected mysql");
+/* --- newest Laravel log (the real error, if it logged one) ----------------- */
+echo "Newest Laravel log\n";
+$logs = glob($root.'/storage/logs/*.log') ?: [];
+if (! $logs) {
+    echo "  (no log files yet)\n";
 } else {
-    try {
-        $pdo = new PDO(
-            "mysql:host={$host};port={$port};dbname={$name}",
-            $user,
-            $pass,
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 5],
-        );
-        ok('Connection', true, 'connected');
-
-        $have = [];
-        foreach ($pdo->query('SHOW TABLES') as $r) {
-            $have[strtolower($r[0])] = true;
-        }
-        foreach (['users', 'settings', 'sessions', 'cache', 'migrations', 'bikes', 'riders', 'readings'] as $t) {
-            ok("table: $t", isset($have[$t]), isset($have[$t]) ? '' : 'MISSING — import the SQL');
-        }
-        if (isset($have['users'])) {
-            $n = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
-            ok('has at least one account', $n > 0, "$n user(s)");
-        }
-    } catch (Throwable $e) {
-        // Never echo the raw DSN/password; the message alone is enough to diagnose.
-        ok('Connection', false, 'FAILED: '.$e->getMessage());
+    usort($logs, fn ($a, $b) => filemtime($b) <=> filemtime($a));
+    $newest = $logs[0];
+    echo '  '.basename($newest).' — last lines:'."\n";
+    $tail = array_slice(file($newest, FILE_IGNORE_NEW_LINES), -18);
+    foreach ($tail as $l) {
+        echo '  | '.substr($l, 0, 200)."\n";
     }
 }
 echo "$line\n";
 
-if ($fail === 0) {
-    echo "RESULT: ALL HARD CHECKS PASSED. Any [..] lines above are advisories.\n";
-    echo "Delete this file now (public/healthcheck.php).\n";
+/* --- boot Laravel and handle /login, capturing the real exception ---------- */
+echo "Laravel boot probe\n";
+if (! is_file($autoload)) {
+    ok('boot', false, 'no autoloader to boot with');
 } else {
-    echo "RESULT: $fail check(s) failed — fix the [XX] lines above, then reload.\n";
-    echo "Once the site is up, DELETE this file (public/healthcheck.php).\n";
-}
+    require $autoload;
+    // Interfaces need interface_exists; classes need class_exists. A missing one
+    // means vendor did not upload completely.
+    ok('class Illuminate\Foundation\Application', class_exists(\Illuminate\Foundation\Application::class), '');
+    ok('iface Illuminate\Contracts\Http\Kernel', interface_exists(\Illuminate\Contracts\Http\Kernel::class), '');
+    ok('class Dotenv\Dotenv', class_exists(\Dotenv\Dotenv::class), '');
 
-// Nothing has been sent yet (everything is buffered), so the status still sets.
-if ($fail > 0) {
-    http_response_code(500);
+    try {
+        /** @var \Illuminate\Foundation\Application $app */
+        $app = require $root.'/bootstrap/app.php';
+        ok('bootstrap/app.php builds app', $app instanceof \Illuminate\Foundation\Application);
+
+        // handle() runs the bootstrappers (env, config, providers, routing) — the
+        // same path a real web request takes, so it reproduces the real failure.
+        $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+        $request = \Illuminate\Http\Request::create(rtrim($env['APP_URL'] ?? 'http://localhost', '/').'/login', 'GET');
+        $response = $kernel->handle($request);
+        $code = $response->getStatusCode();
+        ok('kernel handles /login', $code < 500, 'HTTP '.$code);
+
+        if ($code >= 500) {
+            echo "  -> /login returned $code; the exception is in the log lines above.\n";
+        }
+        $kernel->terminate($request, $response);
+    } catch (Throwable $e) {
+        ok('Laravel boot', false, get_class($e).': '.$e->getMessage());
+        echo '       at '.$e->getFile().':'.$e->getLine()."\n";
+    }
 }
-ob_end_flush();
+// The registered shutdown function prints the RESULT line and flushes.
